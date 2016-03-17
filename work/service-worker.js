@@ -1,4 +1,5 @@
-var cacheName = 'weatherPWA-step-6-3';
+var dataCacheName = 'weatherData-v2';
+var cacheName = 'weatherPWA-step-6-4';
 var filesToCache = [
   '/',
   '/index.html',
@@ -44,9 +45,23 @@ self.addEventListener('activate', function(e) {
 
 self.addEventListener('fetch', function(e) {
 	console.log('[ServiceWorker] Fetch', e.request.url);
-	e.respondWith(
-		caches.match(e.requese).then(function(response) {
-			return response || fetch(e.request);
-		})
-	);
+	var dataUrl = 'https://publicdata-weather.firebaseio.com/';
+	if (e.request.url.indexOf(dataUrl) === 0) {
+		e.respondWith(
+			fetch(e.request)
+				.then(function(response) {
+					return caches.open(dataCacheName).then(function(cache) {
+						cache.put(e.request.url, response.clone());
+						console.log('[ServiceWorker] Fetched & Cached', e.request.url);
+						return response;
+					});
+			})
+		);
+	} else {
+		e.respondWith(
+			caches.match(e.request).then(function(response) {
+				return response || fetch(e.request);
+			})
+		);
+	}
 });
